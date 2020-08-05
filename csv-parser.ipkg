@@ -1,0 +1,15 @@
+package csv-parser
+
+brief = "Simple CSV parser"
+version = "0.1"
+readme = "README.md"
+license = "MIT"
+authors = "Wanja Chresta"
+maintainers = "Wanja Chresta"
+homepage = "https://github.com/wchresta/csv-parser"
+bugtracker = "https://github.com/wchresta/csv-parser/issues"
+
+depends = contrib
+
+modules = Language.CSV
+

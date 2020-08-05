@@ -1,0 +1,10 @@
+package csvParser
+
+depends = contrib
+
+modules = Test.Main
+        , Language.CSV
+
+executable = runTest
+main = Test.Main
+
