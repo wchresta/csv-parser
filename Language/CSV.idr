@@ -74,7 +74,8 @@ csvTokenMap = toTokenMap $
   ]
 
 export
-lexCSV : String -> Maybe (List (WithBounds CSVToken))
+lexCSV : String
+       -> Maybe (List (WithBounds CSVToken))
 lexCSV str =
   case lex csvTokenMap str of
        (tokens,_,_,"") => Just tokens
@@ -120,12 +121,14 @@ csv : Grammar CSVToken CSVToken False CSV
 csv = sepBy crlf rec <* optional crlf
 
 export
-parseCSV : List (WithBounds CSVToken) -> Maybe CSV
+parseCSV : List (WithBounds CSVToken)
+         -> Maybe CSV
 parseCSV toks =
   case parseWith csv toks of
     Right (_,(dat,_))    => Just dat 
     Left  err            => Just $ [[show err]]
 
 export
-parse : String -> Maybe CSV
+parse : String
+      -> Maybe CSV
 parse x = parseCSV !(lexCSV x)
