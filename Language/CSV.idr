@@ -2,7 +2,9 @@ module Language.CSV
 
 import Data.List
 import Text.Lexer
+import Text.Lexer.Core
 import Text.Parser
+import Text.Parser.Core
 import Text.Token
 
 %default total
@@ -43,6 +45,19 @@ Eq CSVToken where
   (==) (Tok kind text) (Tok kind' text') = kind == kind' && text == text'
 
 export
+Semigroup Language.CSV.CSVToken where
+  x <+> y = Tok TextData
+                (fastPack $ 
+                  (fastUnpack x.text)
+                  ++
+                 (fastUnpack y.text)
+                )
+
+export
+Monoid Language.CSV.CSVToken where
+  neutral = Tok TextData "" 
+
+export
 Show CSVToken where
   show (Tok TextData s) = s
   show (Tok Comma _) = "COMMA"
@@ -59,62 +74,60 @@ csvTokenMap = toTokenMap $
   ]
 
 export
-lexCSV : String -> Maybe (List CSVToken)
+--lexCSV : String -> Maybe (List CSVToken)
+lexCSV : String -> Maybe (List (WithBounds CSVToken))
 lexCSV str =
   case lex csvTokenMap str of
-       (tokens, _, _, "") => Just $ map TokenData.tok tokens
-       _                  => Nothing
+       (tokens,_,_,"") => Just tokens--Just $ map val tokens
+       _               => Nothing
 
 public export
 CSV : Type
 CSV = List (List String)
 
-comma : Grammar CSVToken True String
+comma : Grammar CSVToken CSVToken True String
 comma = match Comma
 
-crlf : Grammar CSVToken True String
+crlf : Grammar CSVToken CSVToken True String
 crlf = match CRLF
 
-dQuote : Grammar CSVToken True String
+dQuote : Grammar CSVToken CSVToken True String
 dQuote = match DQuote
 
-textData : Grammar CSVToken True String
+textData : Grammar CSVToken CSVToken True String
 textData = map concat $ some (match TextData)
 
-twoDQuote : Grammar CSVToken True String
+twoDQuote : Grammar CSVToken CSVToken True String
 twoDQuote = match DQuote *> match DQuote *> pure "\"\""
 
-nonEscaped : Grammar CSVToken True String
+nonEscaped : Grammar CSVToken CSVToken True String
 nonEscaped = textData
 
-escaped : Grammar CSVToken True String
-escaped = do
-  dQuote
-  commit
-  els <- some (textData <|> twoDQuote <|> comma <|> crlf)
-  dQuote
-  pure $ concat els
+escaped : Grammar CSVToken CSVToken True String
+escaped = match DQuote 
+          *>
+          some (textData <|> twoDQuote <|> comma <|> crlf)
+          *>
+          match DQuote
 
-
-field : Grammar CSVToken True String
+field : Grammar CSVToken CSVToken True String
 field = escaped <|> nonEscaped
 
-rec : Grammar CSVToken True (List String)
-rec = sepBy1 comma field
+rec : Grammar CSVToken CSVToken False (List String)
+rec = sepBy comma field
 
 export
-csv : Grammar CSVToken True CSV
-csv = sepBy1 crlf rec <* optional crlf
+csv : Grammar CSVToken CSVToken False CSV
+csv = sepBy crlf rec <* optional crlf
 
+--parseCSV : List CSVToken -> Maybe CSV
 export
-parseCSV : List CSVToken -> Maybe CSV
+parseCSV : List (WithBounds CSVToken) -> Maybe CSV
 parseCSV toks =
-  case Text.Parser.Core.parse csv  $ toks of
-    Right (dat, [])       => Just dat
-    Right (dat, toks)     => Just $ dat ++ [[show toks]]
-    Left (Error err toks) => Just $ [[err]] ++ [[show toks]]
+  case parseWith csv toks of
+    Right (_,(dat,_))    => Just dat 
+    Left  err            => Just $ [[show err]]-- ++ [[show toks]]
 
 export
 parse : String -> Maybe CSV
 parse x = parseCSV !(lexCSV x)
-
