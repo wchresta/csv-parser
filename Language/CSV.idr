@@ -47,10 +47,10 @@ Eq CSVToken where
 export
 Semigroup Language.CSV.CSVToken where
   x <+> y = Tok TextData
-                (fastPack $ 
-                  (fastUnpack x.text)
+                ( fastPack $ 
+                  ( fastUnpack x.text )
                   ++
-                 (fastUnpack y.text)
+                  ( fastUnpack y.text )
                 )
 
 export
