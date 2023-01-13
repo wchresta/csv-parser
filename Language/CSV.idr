@@ -77,7 +77,7 @@ export
 lexCSV : String -> Maybe (List (WithBounds CSVToken))
 lexCSV str =
   case lex csvTokenMap str of
-       (tokens,_,_,"") => Just tokens--Just $ map val tokens
+       (tokens,_,_,"") => Just tokens
        _               => Nothing
 
 public export
