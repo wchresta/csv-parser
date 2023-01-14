@@ -14,6 +14,7 @@ data CSVTokenKind
   = TextData
   | Comma
   | CRLF
+  | NL
   | DQuote
 
 export
@@ -21,6 +22,7 @@ Eq CSVTokenKind where
   TextData == TextData = True
   Comma == Comma = True
   CRLF == CRLF = True
+  NL == NL = True
   DQuote == DQuote = True
   _ == _ = False
 
@@ -29,11 +31,13 @@ TokenKind CSVTokenKind where
   TokType TextData = String
   TokType Comma = String
   TokType CRLF = String
+  TokType NL = String
   TokType DQuote = String
 
   tokValue TextData s = s
   tokValue Comma s = s
   tokValue CRLF s = s
+  tokValue NL s = s 
   tokValue DQuote s = s
 
 public export
@@ -60,16 +64,18 @@ Monoid Language.CSV.CSVToken where
 export
 Show CSVToken where
   show (Tok TextData s) = s
-  show (Tok Comma _) = "COMMA"
-  show (Tok CRLF _) = "CRLF"
-  show (Tok DQuote _) = "DQUOTE"
+  show (Tok Comma _)    = "COMMA"
+  show (Tok CRLF _)     = "CRLF"
+  show (Tok NL _)       = "NL"
+  show (Tok DQuote _)   = "DQUOTE"
 
 private
 csvTokenMap : TokenMap CSVToken
 csvTokenMap = toTokenMap $
-  [ (is ',', Comma)
-  , (exact "\r\n", CRLF)
-  , (is '"', DQuote)
+  [ (is ',',Comma)
+  , (exact "\r\n",CRLF)
+  , (exact "\n",NL)
+  , (is '"',DQuote)
   , (any <+> many (non $ oneOf "\r\n,\""), TextData)
   ]
 
@@ -91,6 +97,9 @@ comma = match Comma
 crlf : Grammar CSVToken CSVToken True String
 crlf = match CRLF
 
+nl : Grammar CSVToken CSVToken True String
+nl = match NL
+
 dQuote : Grammar CSVToken CSVToken True String
 dQuote = match DQuote
 
@@ -106,7 +115,7 @@ nonEscaped = textData
 escaped : Grammar CSVToken CSVToken True String
 escaped = match DQuote 
           *>
-          some (textData <|> twoDQuote <|> comma <|> crlf)
+          some (textData <|> twoDQuote <|> comma <|> nl <|> crlf)
           *>
           match DQuote
 
@@ -118,7 +127,7 @@ rec = sepBy comma field
 
 export
 csv : Grammar CSVToken CSVToken False CSV
-csv = sepBy crlf rec <* optional crlf
+csv = sepBy (nl <|> crlf) rec <* (optional nl <|> optional crlf)
 
 export
 parseCSV : List (WithBounds CSVToken)
