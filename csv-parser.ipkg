@@ -1,11 +1,13 @@
 package csv-parser
 
 brief = "Simple CSV parser"
-version = "0.1"
+version = 1.0.0
 readme = "README.md"
 license = "MIT"
-authors = "Wanja Chresta"
-maintainers = "Wanja Chresta"
+authors = "Wanja Chresta,
+           Matthew Mosior"
+maintainers = "Wanja Chresta,
+               Matthew Mosior"
 homepage = "https://github.com/wchresta/csv-parser"
 bugtracker = "https://github.com/wchresta/csv-parser/issues"
 
